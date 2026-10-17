@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "935765782222",
+    "project_id": "eduardozap-7ba4a",
+    "storage_bucket": "eduardozap-7ba4a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:935765782222:android:d88d36d13822b864da2a9f",
+        "android_client_info": {
+          "package_name": "com.eduardoleao.eduardozap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYoYZyOBKDKr1Gl_7ORWGkEmTd1O3hrbc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
