@@ -307,3 +307,14 @@ Domínio Personalizado: Você pode adicionar seu próprio domínio na Vercel (ex
 
 Variáveis de Ambiente: Como você está usando o Firebase, é uma boa prática mover as chaves do firebase.ts para variáveis de ambiente na Vercel para não expô-las no código. Você pode fazer isso em Project Settings > Environment Variables.
 
+
+dia 17/10/2026 que eu subiu o meu site para o Vercel
+eduardozap-bki6.vercel.app
+
+dia 26/10/2026 para subi a aplicaçao para o github
+
+git status
+git add .
+git commit -m "Corrige erro de permissão ao gerar PDF"
+git pull origin main
+git push origin main

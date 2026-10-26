@@ -9,7 +9,7 @@ import {
 import { ref, set } from 'firebase/database'; 
 
 // AQUI ESTAVA O ERRO: A declaração da função signUp precisa vir antes do código
-export async function signUp(email: string, password: string, name: string, phone: string) {
+export async function signUp(email: string, password: string, name: string, phone: string, avatarBase64?: string) {
   // 1. Cria o usuário no Authentication
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
@@ -19,6 +19,7 @@ export async function signUp(email: string, password: string, name: string, phon
     name: name,
     phone: phone,
     email: email,
+    avatarBase64: avatarBase64 || '',
     createdAt: Date.now()
   });
 
