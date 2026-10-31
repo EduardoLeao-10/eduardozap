@@ -9,7 +9,6 @@ app/login.tsx
 app/register.tsx
 app/profile.tsx
 app/chatId.tsx
-app/profile.tsx
 app/index.tsx
 
 src/components/

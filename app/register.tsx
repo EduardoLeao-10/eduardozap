@@ -113,7 +113,6 @@ export default function Register() {
         <TouchableOpacity style={styles.button} onPress={handleSave}>
           <Text style={styles.buttonText}>Salvar</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={pickImage} style={styles.avatarWrap}></TouchableOpacity>
       </View>
     </ImageBackground>
   );
