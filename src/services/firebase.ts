@@ -1,7 +1,9 @@
+// src/services/firebase.ts
 import { initializeApp } from "firebase/app";
-import { getAnalytics, isSupported } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
+import { getAuth } from "firebase/auth"; // 👈 Mudança principal: use getAuth
 import { getDatabase } from "firebase/database";
+import { getAnalytics, isSupported } from "firebase/analytics";
+// import AsyncStorage from '@react-native-async-storage/async-storage'; // Não é mais necessário importar aqui
 
 const firebaseConfig = {
   apiKey: "AIzaSyAZ_mjBXQ1swUVnNcCYyePKhejc1zM0gko",
@@ -16,8 +18,10 @@ const firebaseConfig = {
 // Inicializa o App
 const app = initializeApp(firebaseConfig);
 
-// Inicializa e exporta o Auth e o Database
+// 👇 O getAuth já utiliza o AsyncStorage internamente para persistência no React Native
 export const auth = getAuth(app);
+
+// Inicializa o banco de dados
 export const database = getDatabase(app);
 
 // Inicializa o Analytics apenas se for suportado (evita erros no Android)

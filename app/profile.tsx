@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ref, get, remove } from 'firebase/database';
+// 👇 CORREÇÃO AQUI: Adicionamos 'goOffline' na importação
+import { ref, get, remove, goOffline } from 'firebase/database';
 import { deleteUser } from 'firebase/auth'; 
+import { Feather } from '@expo/vector-icons';
 import { database, auth } from '../src/services/firebase';
-import { signOut } from '../src/services/auth'; // Importe a função de logout
+import { signOut } from '../src/services/auth';
+import { clearPresence } from '../src/services/presence'; 
 import { colors, spacing } from '../src/utils/theme';
 
 type UserProfile = {
@@ -21,11 +24,14 @@ export default function Profile() {
   useEffect(() => {
     const uid = auth.currentUser?.uid;
     if (!uid) {
-      router.replace('/login');
+      if (Platform.OS === 'web') {
+        window.location.href = '/login';
+      } else {
+        router.replace('/login');
+      }
       return;
     }
 
-    // Busca os dados do usuário no banco
     const fetchProfile = async () => {
       try {
         const snap = await get(ref(database, `users/${uid}`));
@@ -42,12 +48,46 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
-  async function handleLogout() {
-    await signOut(); // Usa a função do Firebase
-    router.replace('/login');
+async function handleLogout() {
+  // 👇 LÓGICA EXCLUSIVA PARA A PLATAFORMA WEB
+  if (Platform.OS === 'web') {
+    const confirmLogout = window.confirm('Deseja realmente sair da conta?');
+    
+    if (confirmLogout) {
+      try {
+        await signOut();
+        window.location.href = '/login'; // Força o recarregamento da página
+      } catch (error) {
+        console.error("Erro ao sair:", error);
+        window.alert("Não foi possível sair da conta.");
+      }
+    }
+  } 
+  // 👇 LÓGICA PARA ANDROID E IOS
+  else {
+    Alert.alert(
+      'Sair',
+      'Deseja realmente sair da conta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/login');
+            } catch (error) {
+              console.error("Erro ao sair:", error);
+              Alert.alert("Erro", "Não foi possível sair.");
+            }
+          } 
+        }
+      ]
+    );
   }
+}
 
-    // NOVO: Função para excluir a conta
   async function handleDeleteAccount() {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
@@ -62,13 +102,16 @@ export default function Profile() {
           style: 'destructive', 
           onPress: async () => {
             try {
-              // 1. Apaga os dados do banco de dados
               await remove(ref(database, `users/${uid}`));
-              // 2. Apaga o usuário do Authentication
               await deleteUser(auth.currentUser!);
               
               Alert.alert('Sucesso', 'Sua conta foi excluída.');
-              router.replace('/login');
+              
+              if (Platform.OS === 'web') {
+                 window.location.href = '/login';
+              } else {
+                router.replace('/login');
+              }
             } catch (error: any) {
               console.error(error);
               Alert.alert('Erro', 'Não foi possível excluir. Faça login novamente e tente de novo.');
@@ -105,22 +148,24 @@ export default function Profile() {
       <Text style={styles.name}>{profile.name}</Text>
       <Text style={styles.phone}>{profile.phone}</Text>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Sair</Text>
-      </TouchableOpacity>
-
+      {/* Botão de Editar Perfil */}
       <TouchableOpacity 
-  style={[styles.button, { backgroundColor: colors.primary, marginBottom: spacing.md }]} 
-  onPress={() => router.push('/register')}
->
-  <Text style={styles.buttonText}>Editar Perfil / Adicionar Foto</Text>
-</TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Sair</Text>
+        style={[styles.button, { backgroundColor: colors.primary, marginBottom: spacing.md }]} 
+        onPress={() => router.push('/register')}
+      >
+        <Text style={styles.buttonText}>Editar Perfil / Adicionar Foto</Text>
       </TouchableOpacity>
 
-      {/* NOVO: Botão de Excluir Conta */}
+      {/* Botão de Sair com Ícone */}
+      <TouchableOpacity 
+        style={[styles.button, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]} 
+        onPress={handleLogout}
+      >
+        <Feather name="log-out" size={20} color={colors.white} style={{ marginRight: 8 }} />
+        <Text style={styles.buttonText}>Sair da Conta</Text>
+      </TouchableOpacity>
+
+      {/* Botão de Excluir Conta */}
       <TouchableOpacity 
         style={[styles.button, { backgroundColor: '#000', marginTop: spacing.md }]} 
         onPress={handleDeleteAccount}
@@ -131,7 +176,6 @@ export default function Profile() {
   );
 }
 
-// Mantenha os mesmos estilos que você já tinha
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', padding: spacing.lg, backgroundColor: colors.white },
   avatar: { width: 130, height: 130, borderRadius: 65, backgroundColor: '#ccc', marginBottom: spacing.md },
@@ -140,6 +184,7 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.danger, padding: spacing.md,
     borderRadius: 999, paddingHorizontal: spacing.xl,
+    width: '100%', maxWidth: 400,
   },
   buttonText: { color: colors.white, fontWeight: 'bold' },
 });

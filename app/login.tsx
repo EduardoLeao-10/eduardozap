@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ImageBackground, Image } from 'react-native'; // 👈 Adicionado Image
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ImageBackground, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { signIn, signUp } from '../src/services/auth';
 import { colors, spacing, radius } from '../src/utils/theme';
@@ -14,7 +14,7 @@ export default function Login() {
   const [phone, setPhone] = useState('');     
   const [isSignUp, setIsSignUp] = useState(false);
   const [bgImage, setBgImage] = useState<string | null>(null);
-  const [avatar, setAvatar] = useState<string | null>(null); // 👈 NOVO: Estado da foto de perfil
+  const [avatar, setAvatar] = useState<string | null>(null);
 
   async function pickBackground() {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -27,7 +27,6 @@ export default function Login() {
     }
   }
 
-  // 👈 NOVO: Função para escolher a foto de perfil
   async function pickImage() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -53,7 +52,6 @@ export default function Login() {
     
     try {
       if (isSignUp) {
-        // 👈 Atualizado: passando o avatar para a função
         await signUp(email, password, name, phone, avatar || undefined);
       } else {
         await signIn(email, password);
@@ -81,7 +79,6 @@ export default function Login() {
           {isSignUp ? 'Crie sua conta' : 'Entre com seu e-mail'}
         </Text>
 
-        {/* 👈 NOVO: Bloco do Avatar (Só aparece no cadastro) */}
         {isSignUp && (
           <TouchableOpacity onPress={pickImage} style={styles.avatarWrap}>
             {avatar ? (
@@ -197,13 +194,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   
-  // 👈 NOVO: Estilos da foto de perfil adicionados aqui
   avatarWrap: { 
     alignSelf: 'center', 
     marginBottom: spacing.md 
   },
   avatar: {
-    width: 100, // Um pouco menor que no register para caber na tela
+    width: 100,
     height: 100,
     borderRadius: 50,
   },
@@ -216,24 +212,19 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: colors.textMuted, fontWeight: '600' },
 
+  // 👇 SOMBRAS REMOVIDAS - SEM ERROS NO TYPESCRIPT
   logo: { 
     fontSize: 34, 
     fontWeight: 'bold', 
     color: colors.primary, 
     textAlign: 'center', 
     marginBottom: spacing.sm,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 4,
   },
   subtitle: { 
     fontSize: 16, 
     color: colors.white, 
     textAlign: 'center', 
     marginBottom: spacing.xl,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 4,
   },
   
   inputContainer: {
@@ -275,8 +266,5 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
     marginTop: spacing.lg, 
     fontSize: 14,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)', 
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 4,
   },
 });

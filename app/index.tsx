@@ -1,10 +1,13 @@
-// app/index.tsx
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { ref, onValue, remove } from 'firebase/database';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, Platform } from 'react-native';
+import { useRouter, Stack } from 'expo-router';
+import { Feather } from '@expo/vector-icons'; 
+// 👇 CORREÇÃO AQUI: Adicionamos 'goOffline' na importação
+import { ref, onValue, remove, goOffline } from 'firebase/database'; 
 import { database } from '../src/services/firebase';
 import { useAuth } from '../src/contexts/AuthContext';
+import { signOut } from '../src/services/auth';
+import { clearPresence } from '../src/services/presence';
 import { colors, spacing, radius } from '../src/utils/theme';
 
 type UserItem = {
@@ -22,21 +25,75 @@ export default function Home() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [statuses, setStatuses] = useState<Record<string, string>>({});
   const [notification, setNotification] = useState<string | null>(null);
-  const [unreadUsers, setUnreadUsers] = useState<Record<string, boolean>>({}); // 👈 NOVO: Guarda quem tem msg não lida
+  const [unreadUsers, setUnreadUsers] = useState<Record<string, boolean>>({}); 
+
+async function handleLogout() {
+  // 👇 LÓGICA EXCLUSIVA PARA A PLATAFORMA WEB
+  if (Platform.OS === 'web') {
+    // Usa o pop-up nativo do navegador (muito mais confiável na web)
+    const confirmLogout = window.confirm('Deseja realmente sair da conta?');
+    
+    if (confirmLogout) {
+      try {
+        await signOut(); // Desloga do Firebase
+        // Recarrega a página inteira. Isso limpa toda a memória do app no navegador
+        window.location.href = '/login'; 
+      } catch (error) {
+        console.error("Erro ao sair:", error);
+        window.alert("Não foi possível sair da conta.");
+      }
+    }
+  } 
+  // 👇 LÓGICA PARA ANDROID E IOS
+  else {
+    Alert.alert(
+      'Sair da Conta',
+      'Deseja realmente sair para entrar com outra conta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/login'); // Navegação normal e suave no celular
+            } catch (error) {
+              console.error("Erro ao sair:", error);
+              Alert.alert("Erro", "Não foi possível sair da conta.");
+            }
+          } 
+        }
+      ]
+    );
+  }
+}
 
   async function deleteUserData(uid: string, name: string) {
-    Alert.alert('Excluir Usuário', `Deseja apagar "${name}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: async () => {
-          await remove(ref(database, `users/${uid}`));
-          const chatKey = myUid && uid ? [myUid, uid].sort().join('_') : '';
-          if (chatKey) {
-            await remove(ref(database, `chats/${chatKey}`));
-            await remove(ref(database, `messages/${chatKey}`));
+    Alert.alert(
+      'Excluir Usuário',
+      `Deseja apagar os dados de "${name}" do banco de dados?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await remove(ref(database, `users/${uid}`));
+              const chatKey = myUid && uid ? [myUid, uid].sort().join('_') : '';
+              if (chatKey) {
+                await remove(ref(database, `chats/${chatKey}`));
+                await remove(ref(database, `messages/${chatKey}`));
+              }
+              Alert.alert('Sucesso', 'Usuário removido do banco de dados.');
+            } catch (error) {
+              Alert.alert('Erro', 'Não foi possível excluir os dados.');
+            }
           }
-          Alert.alert('Sucesso', 'Usuário removido.');
-      }}
-    ]);
+        }
+      ]
+    );
   }
 
   useEffect(() => {
@@ -76,20 +133,18 @@ export default function Home() {
       const data = snap.val();
       if (!data) return;
 
-      const unreadMap: Record<string, boolean> = {}; // 👈 Mapa de quem tem msg nova
+      const unreadMap: Record<string, boolean> = {};
 
       Object.values(data).forEach((chat: any) => {
         if (chat.users && Array.isArray(chat.users) && chat.users.includes(myUid)) {
           
-          // 👈 A MÁGICA ACONTECE AQUI: Se o último a enviar NÃO fui eu, marca como não lida
           if (chat.lastSenderId && chat.lastSenderId !== myUid) {
             const otherUid = chat.users.find((u: string) => u !== myUid);
             if (otherUid) {
-              unreadMap[otherUid] = true; // Marca esse usuário com bolinha vermelha
+              unreadMap[otherUid] = true;
             }
           }
 
-          // Código antigo do Toast
           if (chat.updatedAt > (data.lastTime || 0)) {
             setNotification(`Nova mensagem: ${chat.lastMessage}`);
             setTimeout(() => setNotification(null), 3000);
@@ -97,7 +152,7 @@ export default function Home() {
         }
       });
 
-      setUnreadUsers(unreadMap); // Salva o mapa no estado
+      setUnreadUsers(unreadMap);
     });
 
     return () => {
@@ -109,6 +164,16 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
+      
+      <Stack.Screen options={{ 
+        title: 'EduardoZap',
+        headerRight: () => (
+          <TouchableOpacity onPress={handleLogout} style={{ marginRight: 15 }}>
+            <Feather name="log-out" size={22} color="#fff" />
+          </TouchableOpacity>
+        ),
+      }} />
+
       {notification && (
         <View style={styles.toast}>
           <Text style={styles.toastText}>{notification}</Text>
@@ -125,14 +190,13 @@ export default function Home() {
         }
         renderItem={({ item }) => {
           const isOnline = statuses[item.uid] === 'online';
-          const hasUnread = unreadUsers[item.uid]; // 👈 Verifica se tem msg não lida
+          const hasUnread = unreadUsers[item.uid];
 
           return (
             <TouchableOpacity
               style={styles.row}
               onLongPress={() => deleteUserData(item.uid, item.name)}
               onPress={() => {
-                // Ao clicar, a bolinha some temporariamente até o Firebase atualizar
                 setUnreadUsers(prev => ({ ...prev, [item.uid]: false })); 
                 router.push(`/chatId?chatId=${item.uid}`);
               }}
@@ -149,7 +213,6 @@ export default function Home() {
                 </Text>
               </View>
 
-              {/* 👈 NOVO: A bolinha vermelha de mensagem não lida */}
               {hasUnread && (
                 <View style={styles.unreadBadge} />
               )}
@@ -169,12 +232,11 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '600', color: colors.text },
   last: { fontSize: 14, color: colors.textMuted, marginTop: 2 },
   
-  // 👈 NOVO: Estilo da bolinha vermelha
   unreadBadge: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#ff3b30', // Vermelho vibrante
+    backgroundColor: '#ff3b30',
     position: 'absolute',
     right: spacing.md,
   },
@@ -185,8 +247,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     padding: spacing.md, borderRadius: radius.md, zIndex: 999,
     alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3, shadowRadius: 3, elevation: 5,
   },
   toastText: { color: colors.white, fontWeight: 'bold', fontSize: 14 },
 });

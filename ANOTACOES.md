@@ -42,6 +42,9 @@ APP_USR-2110883807577000-121510-545532fcb9dd9fcbbdc8b1759281ad54-141082339
 
 Bom dia react native typescript o meu projeto somente para plataforma web e android expo router 
 
+Boa tarde react native typescript o meu projeto somente para plataforma web e android expo router 
+
+
 Passo 6 - Build para produção (APK)
 
 eas build --platform android --profile production
@@ -317,3 +320,7 @@ git add .
 git commit -m "Corrige erro de permissão ao gerar PDF"
 git pull origin main
 git push origin main
+
+
+dia 10/11/2026 para subi a aplicaçao para o github
+Plano Spark: O plano gratuito do Firebase

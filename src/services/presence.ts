@@ -1,3 +1,4 @@
+// src/services/presence.ts
 import { ref, onValue, set, onDisconnect } from 'firebase/database';
 import { database, auth } from './firebase';
 
@@ -22,5 +23,19 @@ export function setupPresence(uid: string) {
       .then(() => {
         set(userStatusRef, isOnline);
       });
+  });
+}
+
+// 👇 NOVO: Função para ser chamada ANTES do logout
+export async function clearPresence(uid: string) {
+  const userStatusRef = ref(database, `/status/${uid}`);
+  
+  // 1. Cancela qualquer onDisconnect pendente para este usuário
+  await onDisconnect(userStatusRef).cancel();
+  
+  // 2. Define o status como offline explicitamente enquanto o usuário ainda está autenticado
+  await set(userStatusRef, {
+    state: 'offline',
+    last_changed: Date.now(),
   });
 }
