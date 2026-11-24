@@ -1,7 +1,9 @@
+// app/login.tsx
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ImageBackground, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { signIn, signUp } from '../src/services/auth';
+// 👇 Importamos a nova função 'ensureUserProfile'
+import { signIn, signUp, ensureUserProfile } from '../src/services/auth';
 import { colors, spacing, radius } from '../src/utils/theme';
 import { Feather } from '@expo/vector-icons'; 
 import * as ImagePicker from 'expo-image-picker'; 
@@ -54,7 +56,13 @@ export default function Login() {
       if (isSignUp) {
         await signUp(email, password, name, phone, avatar || undefined);
       } else {
-        await signIn(email, password);
+        // 👇 CORREÇÃO: Guarda o resultado do login para pegar o UID
+        const userCredential = await signIn(email, password);
+        
+        // 👇 Garante que o perfil exista no banco de dados
+        if (userCredential.user) {
+          await ensureUserProfile(userCredential.user.uid, email);
+        }
       }
       router.replace('/');
     } catch (e: any) {
@@ -212,7 +220,6 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: colors.textMuted, fontWeight: '600' },
 
-  // 👇 SOMBRAS REMOVIDAS - SEM ERROS NO TYPESCRIPT
   logo: { 
     fontSize: 34, 
     fontWeight: 'bold', 

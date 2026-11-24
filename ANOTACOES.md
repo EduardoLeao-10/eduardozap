@@ -324,3 +324,6 @@ git push origin main
 
 dia 10/11/2026 para subi a aplicaçao para o github
 Plano Spark: O plano gratuito do Firebase
+
+dia 18/11/2026 
+Agora vamos fazer uma verdadeira "dissecação" dos codigos para estudos
